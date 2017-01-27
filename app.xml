@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="http://ns.adobe.com/air/application/20.0">
+  <id>io.nfg</id>
+  <versionNumber>0.1</versionNumber>
+  <supportedProfiles>desktop</supportedProfiles>
+  <filename>TestProg</filename>
+  <name>TestProg</name>
+  <initialWindow>
+    <content>build/app.swf</content>
+  </initialWindow>
+</application>
