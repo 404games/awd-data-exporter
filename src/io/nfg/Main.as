@@ -21,9 +21,11 @@ package io.nfg {
 
   public class Main extends Sprite {
     private var _lines:Array;
+    private var _assetsCount:uint;
     private var _fileName:String;
+    private var _createdAt:Date;
     private const SOURCE_FOLDER:String = "source-awds";
-    private const DEST_FOLDER:String = "dest-coffee";
+    private const DEST_FOLDER:String = "dest-coffees";
 
     public function Main():void {
       trace('App started ...');
@@ -53,12 +55,14 @@ package io.nfg {
       trace();
 
       // Step 3: for each asset loaded in the awd -> fill this._lines
-      //AssetLibrary.addEventListener(AssetEvent.ASSET_COMPLETE, onAssetComplete);
-      AssetLibrary.addEventListener(AssetEvent.MESH_COMPLETE, onAssetComplete);
+      AssetLibrary.addEventListener(AssetEvent.ASSET_COMPLETE, onAssetComplete);
+      //AssetLibrary.addEventListener(AssetEvent.MESH_COMPLETE, onAssetComplete);
 
       // Step 4: export this._lines to target.coffee, if awdFiles.length > 0 then parse next else quit app
       AssetLibrary.addEventListener(LoaderEvent.RESOURCE_COMPLETE, function(event:LoaderEvent):void {
         _writeFile(_fileName.replace('.awd', '.coffee'),"module.exports = [\n" + _lines.join(",\n") + "\n]");
+        _lines = [];
+        _assetsCount = 0;
         if(awdFileNames.length > 0) {
           _fileName = awdFileNames.shift();
           _readFile();
@@ -76,35 +80,42 @@ package io.nfg {
     }
 
     private function _readFile():void {
+      _createdAt = new Date();
+      trace('< Opening ' + _fileName);
       var testFile:File = File.applicationDirectory.resolvePath(SOURCE_FOLDER).resolvePath(_fileName); // Point it to an actual file
       testFile.load();
-      testFile.addEventListener(Event.COMPLETE, function(e:Event):void {
+      var onLoadingComplete:Function =  function(e:Event):void {
+        testFile.removeEventListener(Event.COMPLETE, onLoadingComplete);
         var loader:Loader3D = new Loader3D();
-
         loader.loadData(testFile.data);
         /*
         loader.addEventListener(LoaderEvent.RESOURCE_COMPLETE, function(e:LoaderEvent):void {
           trace(e);
         });
         */
-      });
+      }
+
+      testFile.addEventListener(Event.COMPLETE, onLoadingComplete);
     }
 
     private function _writeFile(fileName, text:String):void {
-      trace('> Saving ' + fileName);
+      trace('  Saving ...');
       var pathToFile:String = File.applicationDirectory.resolvePath(DEST_FOLDER + '/' + fileName).nativePath;
       var file:File = new File(pathToFile);
       var stream:FileStream = new FileStream();
       stream.open(file, FileMode.WRITE);
       stream.writeUTFBytes(text);
       stream.close();
+      var elapsedMs:uint = ( (new Date()).getTime() - _createdAt.getTime());
+      trace('> ' + fileName + ' Saved', '( ' + elapsedMs + 'ms, ' + _assetsCount + ' items )');
+      trace();
     }
 
     //separate function
     private function onAssetComplete(event:AssetEvent):void {
-      //trace()
       //trace(event.asset.assetType);
-      //if (event.asset.assetType == AssetType.MESH) {
+      _assetsCount++;
+      if (event.asset.assetType == AssetType.MESH) {
         var m:Mesh = event.asset as Mesh;
         var line:String;
         line = "  "
@@ -119,7 +130,7 @@ package io.nfg {
         //var m:Mesh = new Mesh ( m.geometry, m.material);
         //m.geometry.scale(7);
         //view.scene.addChild(m);
-      //}
+      }
       /*
       } else if (event.asset.assetType == AssetType.MESH) {
         trace(event.asset.name);
